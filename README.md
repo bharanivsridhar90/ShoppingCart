@@ -86,4 +86,7 @@ BaseUrl : https://equalexperts.github.io/backend-take-home-test-data/weetabix.js
 
 6. sample output: { "product": "cornflakes", "price": 2.52 }
 
+## Dependencies
+- org.json (json-20231013.jar) included in `lib/` folder.
+- Add to Build Path in Eclipse before running.
 
