@@ -1,30 +1,30 @@
 package com.assignment.cart;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class ShoppingCart {
     private final List<CartItem> items = new ArrayList<>();
+    private final PriceProvider priceProvider;
+    private final TaxCalculator taxCalculator;
 
-    // Add product by name and quantity
+    public ShoppingCart(PriceProvider priceProvider, TaxCalculator taxCalculator) {
+        this.priceProvider = priceProvider;
+        this.taxCalculator = taxCalculator;
+    }
+
     public void addProduct(String productName, int quantity) {
-    	if (quantity <= 0) {
-            // Do nothing if quantity is zero or negative
-            return;
-        }
-        // Fetch price from API
-        double price = PriceApiClient.getPrice(productName);
+        if (quantity <= 0) return;
+
+        double price = priceProvider.getPrice(productName);
         Product product = new Product(productName, price);
 
-        // Check if product already exists in cart
         for (CartItem item : items) {
             if (item.getProduct().getName().equalsIgnoreCase(productName)) {
                 item.increaseQuantity(quantity);
                 return;
             }
         }
-        // Otherwise add new item
         items.add(new CartItem(product, quantity));
     }
 
@@ -37,16 +37,14 @@ public class ShoppingCart {
         for (CartItem item : items) {
             subtotal += item.getLineTotal();
         }
-        return CartUtils.calculateSubtotal(subtotal);
+        return CartUtils.round(subtotal);
     }
 
     public double getTax() {
-        return CartUtils.calculateTax(getSubtotal());
+        return taxCalculator.calculateTax(getSubtotal());
     }
 
     public double getTotal() {
-        return CartUtils.calculateTotal(getSubtotal());
+        return CartUtils.round(getSubtotal() + getTax());
     }
-
 }
-

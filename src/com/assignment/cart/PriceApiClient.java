@@ -4,36 +4,42 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import org.json.JSONObject;
 
-public class PriceApiClient {
+public class PriceApiClient implements PriceProvider {
+    private final String apiBaseUrl;
 
-    private static final String BASE_URL = "https://equalexperts.github.io/backend-take-home-test-data/";
+    public PriceApiClient(String apiBaseUrl) {
+        this.apiBaseUrl = apiBaseUrl;
+    }
 
-    public static double getPrice(String productName) {
+    @Override
+    public double getPrice(String productName) {
         try {
-            String urlString = BASE_URL + productName.toLowerCase() + ".json";
-            URL url = new URL(urlString);
-
+            // Example: https://equalexperts.github.io/backend-take-home-test-data/cornflakes.json
+            String queryUrl = apiBaseUrl + "/" + productName.toLowerCase() + ".json";
+            URL url = new URL(queryUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
-            // Read response
-            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                response.append(line);
+            if (conn.getResponseCode() != 200) {
+                throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
             }
-            in.close();
 
-            // Response looks like: { "price": 2.52 }
-            String json = response.toString().trim();
-            // Extract the number between "price": and }
-            String priceStr = json.replaceAll("[^0-9.]", "");
-            return Double.parseDouble(priceStr);
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            JSONObject json = new JSONObject(response.toString());
+            return json.getDouble("price");
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch price for product: " + productName, e);
+            throw new RuntimeException("Error fetching price for " + productName, e);
         }
     }
+
 }
